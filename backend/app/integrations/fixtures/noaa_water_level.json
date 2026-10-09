@@ -1,0 +1,9 @@
+{
+  "_fixture_note": "TEST FIXTURE — offline example of a NOAA CO-OPS datagetter water_level response for station 8775296 (USS Lexington, Corpus Christi Bay). Shape mirrors the live API so the parser runs offline. NOT a live reading.",
+  "metadata": { "id": "8775296", "name": "USS Lexington, Corpus Christi Bay, TX", "lat": "27.8103", "lon": "-97.3897" },
+  "data": [
+    { "t": "2026-10-09 18:00", "v": "1.71", "s": "0.01", "f": "0,0,0,0", "q": "p" },
+    { "t": "2026-10-09 19:00", "v": "1.74", "s": "0.01", "f": "0,0,0,0", "q": "p" },
+    { "t": "2026-10-09 20:00", "v": "1.77", "s": "0.01", "f": "0,0,0,0", "q": "p" }
+  ]
+}

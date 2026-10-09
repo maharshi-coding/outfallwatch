@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --radius: 0.9rem;
+    /* semantic tokens in HSL (deep-navy command center) */
+    --background: 205 65% 7%;
+    --foreground: 196 40% 94%;
+    --surface: 203 72% 13%;
+    --border: 200 30% 70%;
+    --input: 200 30% 70%;
+    --ring: 184 100% 45%;
+    --primary: 170 100% 37%;
+    --primary-foreground: 205 65% 7%;
+    --muted: 203 40% 20%;
+    --muted-foreground: 199 20% 70%;
+    --accent: 187 71% 63%;
+    --accent-foreground: 205 65% 7%;
+    --destructive: 2 80% 66%;
+    --destructive-foreground: 205 65% 7%;
+  }
+
+  * {
+    border-color: hsl(var(--border) / 0.14);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    color: hsl(var(--foreground));
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(1200px 600px at 82% -12%, rgba(0, 191, 166, 0.14), transparent 60%),
+      radial-gradient(1000px 520px at -12% 8%, rgba(94, 220, 229, 0.1), transparent 55%),
+      radial-gradient(800px 800px at 50% 120%, rgba(11, 57, 84, 0.5), transparent 60%),
+      #061724;
+  }
+}
+
+@layer components {
+  /* glass command-center panel */
+  .panel {
+    @apply relative rounded-2xl border border-white/10 bg-marine/30 shadow-panel backdrop-blur-xl;
+  }
+  .panel::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl;
+    background: linear-gradient(90deg, transparent, rgba(94, 220, 229, 0.5), transparent);
+  }
+  .panel-pad {
+    @apply p-4 sm:p-5;
+  }
+  .stat-num {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+  }
+  /* faint engineering grid used behind heroes/maps */
+  .techgrid {
+    background-image:
+      linear-gradient(rgba(94, 220, 229, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(94, 220, 229, 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+/* MapLibre dark tweaks */
+.maplibregl-ctrl-attrib {
+  background: rgba(7, 27, 44, 0.7) !important;
+  color: rgba(245, 249, 251, 0.5) !important;
+  font-size: 10px;
+}
+.maplibregl-ctrl-attrib a {
+  color: rgba(94, 220, 229, 0.7) !important;
+}
