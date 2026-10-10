@@ -13,7 +13,6 @@ exact board).
 | Camera pin conflict | **⚠️ CRITICAL** | The OV2640 hard-wires GPIO 4,5,6,7,8,9,10,11,12,13,15,16,17,18. Do **not** use these for sensors/LEDs even though the firmware never starts the camera. |
 | ADC pin / attenuation | **OK** | `GPIO1` = ADC1_CH0, free on this board, `ADC_11db`. |
 | Turbidity sensor in kit | **NOT ASSUMED** | SEN0189-class turbidity probes are typically a separate purchase. |
-| DS18B20 in kit | **CHECK** | Some Freenove kits include it; verify. |
 | LEDs / resistors / breadboard | **LIKELY PRESENT** | Standard starter-kit parts; still verify. |
 | Compilation | **VERIFIED** | Compiles clean for `esp32-s3-devkitc-1` via PlatformIO — zero warnings/errors, `firmware.bin` 874 KB (RAM 14.7%, Flash 26.8%). Change `board` for your exact variant. |
 | Flash / on-water test | **NOT PERFORMED** | Requires hardware. |
@@ -32,7 +31,6 @@ exact board).
 ## Examples to cross-reference in the Freenove repo
 
 - ADC / analog read example → confirm your ADC API + pin.
-- DS18B20 / OneWire example → confirm wiring + library.
 - Wi-Fi station + HTTP example → confirm core version and `WiFi`/`HTTPClient` usage.
 
 Record here, after you verify on real hardware, which components and pins you **confirmed**

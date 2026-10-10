@@ -13,15 +13,9 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include "config.h"
 
 // ----------------------------------------------------------------- sensor state
-static OneWire oneWire(DS18B20_PIN);
-static DallasTemperature ds18b20(&oneWire);
-static bool ds18b20Present = false;
-
 static float medianBuf[MEDIAN_SAMPLES];
 static uint32_t medianWrite = 0;   // monotonic write index so the window actually slides
 static float baselineBuf[BASELINE_SAMPLES];
@@ -181,7 +175,7 @@ static uint32_t currentIntervalMs() {
   return state == NORMAL ? NORMAL_INTERVAL_MS : EVENT_INTERVAL_MS;  // adaptive
 }
 
-static String buildPacket(float adcMv, float index, float tempC, bool stormBtn,
+static String buildPacket(float adcMv, float index, bool stormBtn,
                           const char *condition) {
   JsonDocument doc;
   char rid[48]; snprintf(rid, sizeof(rid), "%s-%08lx-%lu", DEVICE_ID,
@@ -193,7 +187,8 @@ static String buildPacket(float adcMv, float index, float tempC, bool stormBtn,
   // backend schema is ge=0, so an unmeasured sample must be null -- never -1
   if (adcMv >= 0) doc["turbidity_raw_mv"] = adcMv; else doc["turbidity_raw_mv"] = nullptr;
   if (index >= 0) doc["turbidity_index"] = index; else doc["turbidity_index"] = nullptr;
-  if (!isnan(tempC)) doc["temperature_c"] = tempC; else doc["temperature_c"] = nullptr;
+  // no temperature sensor fitted: the field is omitted, the backend defaults it to
+  // null, and the UI shows "Unavailable" -- never a fabricated 0.
   doc["conductivity_us_cm"] = nullptr;  // not fitted by default
   doc["calibration_id"] = CAL_ID;
   doc["storm_active"] = stormBtn;
@@ -250,8 +245,6 @@ void setup() {
 #if FLOW_ADC_PIN >= 0
   analogSetPinAttenuation(FLOW_ADC_PIN, ADC_11db);
 #endif
-  ds18b20.begin();
-  ds18b20Present = ds18b20.getDeviceCount() > 0;
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);  // non-blocking; loop handles reconnect/backoff
@@ -293,14 +286,6 @@ void loop() {
     condition = classifyWater(adcMv, index);
   }
 
-  float tempC = NAN;  // NAN -> sent as null, never a bogus value
-  if (ds18b20Present) {
-    ds18b20.requestTemperatures();
-    float t = ds18b20.getTempCByIndex(0);
-    // reject DEVICE_DISCONNECTED_C (-127) and anything outside the backend's accepted band,
-    // so one bad read can't 422-reject the whole packet
-    if (t >= -5.0f && t <= 60.0f) tempC = t;
-  }
 #if RAIN_BUTTON_PIN >= 0
   bool stormBtn = digitalRead(RAIN_BUTTON_PIN) == LOW;
 #else
@@ -330,7 +315,7 @@ void loop() {
 #endif
   if (urgent || samplesSinceTx >= HEARTBEAT_EVERY) {
     samplesSinceTx = 0;
-    String body = buildPacket(adcMv, index, tempC, stormBtn, condition);
+    String body = buildPacket(adcMv, index, stormBtn, condition);
     if (!postJson(body)) enqueueOffline(body);  // bounded retry queue
   }
 

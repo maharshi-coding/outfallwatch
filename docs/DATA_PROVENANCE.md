@@ -18,7 +18,8 @@ each kind of data comes from and how it is marked.
   intensity)` — deterministic, seeded. The turbidity index is a **0–100 relative demo
   index**, not NTU. Conductivity is left `null` (optional sensor absent) — shown as
   "Unavailable", never 0.
-- **HARDWARE:** two-point calibrated relative index from the turbidity module; DS18B20 °C
+- **HARDWARE:** two-point calibrated relative index from the LED/photoresistor rig; no
+  temperature probe is fitted, so `temperature_c` is always null for HARDWARE readings
   if present; raw mV preserved. Calibration id/date/references stored in `Calibration`.
 
 These are the only data fed to the detection engine. Official data is **never** fed in.

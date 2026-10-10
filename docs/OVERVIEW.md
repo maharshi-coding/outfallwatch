@@ -23,7 +23,8 @@ a state-coloured sensor pin, the active-alert card, and a Green-AI snapshot.
 
 ### 2. Live Monitoring (`/live`) — 🟢 hardware
 The dedicated sensor view: live gauge + trend, **raw analog mV**, relative index, water temp
-(DS18B20), conductivity (if fitted), sensor-health state, sampling interval, quality flags.
+(simulation only — no probe fitted on the hardware), conductivity (if fitted),
+sensor-health state, sampling interval, quality flags.
 → *With hardware:* the primary page for the real probe — including "Unavailable" for unwired
 sensors and SENSOR_FAULT for bad reads (never a fabricated 0).
 
@@ -84,7 +85,7 @@ how real readings are interpreted.
 
 **Firmware**
 - ESP32-S3 in C++ (Arduino framework), PlatformIO build
-- ArduinoJson v7, OneWire, DallasTemperature · Wi-Fi HTTP telemetry
+- ArduinoJson v7 · Wi-Fi HTTP telemetry
 
 **Data sources:** NOAA Tides & Currents API · GCOOS ERDDAP
 

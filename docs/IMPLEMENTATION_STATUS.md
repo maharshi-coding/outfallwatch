@@ -64,8 +64,7 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
   the ceiling and escalation (+30) is unreachable — the board **cannot** alert until a sensor or a
   pot/jumper on GPIO1 lets the baseline establish low and then rise.
 - Still physically unverified: no sensor wired to GPIO1 (floating input reads ~10–24 mV of noise
-  → index clamps to 100, as designed), LEDs/buzzer not observed, no DS18B20 attached
-  (`getDeviceCount()==0`), and no real turbidity calibration (`V_CLEAR_MV`/`V_CLOUDY_MV` still at
+  → index clamps to 100, as designed), LEDs/buzzer not observed, and no real turbidity calibration (`V_CLEAR_MV`/`V_CLOUDY_MV` still at
   template defaults, so the index carries no physical meaning yet).
 
 ## Tested commands & results

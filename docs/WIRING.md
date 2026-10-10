@@ -94,20 +94,6 @@ is physically present.
 `FLOW_TRIGGER_MV` must be measured on your own rig: spin the turbine by hand at the slowest
 flow you care about and read the serial `flow=` value.
 
-## DS18B20 temperature (optional)
-
-```
-DS18B20 VDD  ──► 3V3
-DS18B20 GND  ──► GND
-DS18B20 DATA ──┬──► ESP32-S3 GPIO21
-               │
-            [4.7kΩ]
-               │
-              3V3      (omit if the breakout already has a pull-up)
-```
-Match **physical wire colours to the probe's own datasheet**, not assumed colours. With no
-probe attached the firmware sends `temperature_c: null` — never a fabricated 0.
-
 ## Indicators
 
 | Signal | Default pin | Meaning |
@@ -128,9 +114,11 @@ indicators are driven by the **local** state machine, so they work even with Wi-
 | 1 | turbidity substitute (LDR divider), ADC1_CH0 | in firmware |
 | 2 | flow sensor (turbine/motor), ADC1_CH1 | in firmware, `FLOW_ADC_PIN` (default -1 = off) |
 | 38 | measurement LED drive | in firmware, `SENSOR_LED_PIN` (default -1 = off) |
-| 21 | DS18B20 1-Wire | in firmware |
 | 40 / 41 / 42 | red / amber / green indicator LEDs | in firmware |
 | 47 | buzzer | in firmware |
+
+> No temperature sensor is fitted, so **GPIO21 is free**. The firmware omits
+> `temperature_c` entirely and the dashboard shows "Unavailable" rather than a fabricated 0.
 
 > **Freenove CAM board:** these avoid the OV2640 camera block (GPIO 4–18), flash/PSRAM (33–37),
 > native USB (19/20), UART0 serial (43/44), and strapping pins (0/45/46). All are broken out on

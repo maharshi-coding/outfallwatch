@@ -64,7 +64,7 @@ export function LiveMonitoring() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Relative index" value={index} unit="/100" decimals={1} hint="not NTU" tone={mode === "ALERT" ? "coral" : mode === "ELEVATED" ? "amber" : "teal"} />
-        <Stat label="Water temp (DS18B20)" value={temp} unit={temp != null ? "°C" : ""} decimals={1} hint={temp == null ? "Unavailable" : undefined} />
+        <Stat label="Water temp" value={temp} unit={temp != null ? "°C" : ""} decimals={1} hint={temp == null ? "No probe fitted" : undefined} />
         <Stat label="Conductivity" value={cond} unit={cond != null ? "µS/cm" : ""} decimals={0} hint={cond == null ? "Unavailable · optional" : undefined} />
         <Stat label="Sensor health" value={health} tone={health === "SENSOR_FAULT" ? "coral" : "default"} animate={false} />
       </div>

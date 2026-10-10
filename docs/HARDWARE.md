@@ -29,8 +29,6 @@ further from certified NTU than a commercial probe — see CALIBRATION.md and LI
 | ~150–220 Ω resistor | LED current limit at 3.3 V | size for your LED's forward voltage |
 | ~10 kΩ resistor | LDR divider leg | tune to your LDR's mid-range for best sensitivity |
 | Turbine / small DC motor **or** flow sensor | water flow rate input | **needs protection** — see WIRING.md |
-| DS18B20 waterproof probe | water temperature | optional; code sends `null` when absent |
-| 4.7 kΩ resistor | DS18B20 1-Wire pull-up | only if the breakout lacks one |
 | 3× LED + current-limiting resistors, optional buzzer | green/amber/red indicator + alarm | local, network-independent |
 | USB power bank or 5 V supply | untethered power | **verified working** without a cable to the host |
 | Breadboard, jumpers, opaque enclosure/tube | build + light shielding | shielding is not optional (see below) |

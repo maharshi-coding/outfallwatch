@@ -14,7 +14,6 @@
 // (strapping), 19/20 (native USB), 43/44 (UART0 = serial monitor), 33-37 (flash/PSRAM).
 // All pins below are broken out on the GPIO extension board and free.
 #define TURBIDITY_ADC_PIN   1     // ADC1_CH0, free, ADC1-capable; fed via the 10k/15k divider
-#define DS18B20_PIN         21    // 1-Wire data, 4.7k pull-up to 3V3
 #define LED_GREEN_PIN       42
 #define LED_AMBER_PIN       41
 #define LED_RED_PIN         40
