@@ -334,7 +334,9 @@ void loop() {
     if (!postJson(body)) enqueueOffline(body);  // bounded retry queue
   }
 
-  Serial.printf("idx=%.1f base=%.1f state=%d cond=%s flow=%.0f msgs=%lu buf=%d\n",
-                index, baselineValue, state, condition, flowMv,
+  // raw= is the dark-corrected mV the calibration references are measured against; it is
+  // printed so the rig can be calibrated on the bench with no Wi-Fi and no dashboard.
+  Serial.printf("raw=%.0f idx=%.1f base=%.1f state=%d cond=%s flow=%.0f msgs=%lu buf=%d\n",
+                adcMv, index, baselineValue, state, condition, flowMv,
                 (unsigned long)msgCount, obCount);
 }
