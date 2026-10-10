@@ -47,7 +47,7 @@ Or run both at once: `./scripts/run_dev.sh`
 
 ### Tests
 ```bash
-cd backend  && . .venv/bin/activate && pytest        # 18 tests: engine + API + green-ai
+cd backend  && . .venv/bin/activate && pytest        # 19 tests: engine + API + green-ai
 cd frontend && npm run test                          # component labelling tests
 cd frontend && npm run build                          # type-check + production build
 ```
@@ -88,9 +88,55 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · API: [`docs/API.md`](
 
 ## Hardware
 
-Tabletop demo only — electronics stay dry, USB-powered. BOM, voltage divider, and safety:
+Tabletop demo only — electronics stay dry. The turbidity input is a **DIY LED + photoresistor**
+rig at 3.3 V (no 5 V, no step-down divider). BOM, wiring, and safety:
 [`docs/HARDWARE.md`](docs/HARDWARE.md), [`docs/WIRING.md`](docs/WIRING.md),
 [`docs/CALIBRATION.md`](docs/CALIBRATION.md), [`docs/FREENOVE_INTEGRATION.md`](docs/FREENOVE_INTEGRATION.md).
+
+### Bringing the board up on a different laptop
+
+The quick start above needs **no hardware**. To stream from a real ESP32-S3 instead, the board
+posts over Wi-Fi to *your* machine, so three things must match your network:
+
+```bash
+# 1. Backend must listen on the LAN, not just localhost
+cd backend && . .venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 2. Find your machine's LAN IP
+ipconfig getifaddr en0          # macOS
+hostname -I | awk '{print $1}'  # Linux
+
+# 3. Point the firmware at it, then flash
+cd firmware
+cp include/config.example.h include/config.h
+#   edit config.h: WIFI_SSID / WIFI_PASSWORD / SERVER_URL=http://<YOUR_LAN_IP>:8000/api/telemetry
+export PATH="$HOME/.platformio/penv/bin:$PATH"   # if `pio` is not on PATH
+pio run -t upload
+pio device monitor                                # expect: idx=.. base=.. state=.. msgs=.. buf=..
+```
+
+`msgs` incrementing means POSTs are succeeding. Then confirm the rows actually landed — this is
+the check that catches silent drops, because serial and device status can both look healthy
+while nothing is stored:
+
+```bash
+sqlite3 backend/outfallwatch.db \
+  "SELECT COUNT(*) FROM sensor_readings WHERE device_id='outfallwatch-esp32-01';"
+```
+
+**Gotchas that will cost you an hour each:**
+
+- **The ESP32-S3 is 2.4 GHz only.** It cannot see a 5 GHz network. On an iPhone hotspot turn on
+  *Maximize Compatibility*; on Android set the AP band to 2.4 GHz.
+- **`SERVER_URL` is compiled into the firmware.** If your laptop's IP changes, reflash.
+- **Firewall**: inbound TCP 8000 must be allowed, and both devices on the same network.
+- **The heartbeat must stay under `stale_after_seconds`** (30 s). `HEARTBEAT_EVERY ×
+  NORMAL_INTERVAL_MS` is currently 2 × 10 s = 20 s. Raise the heartbeat above 30 s and a healthy
+  board flaps ONLINE/STALE.
+- **Only one program can hold the serial port** — close VS Code's monitor before `pio device
+  monitor`, and vice versa.
+- WPA2-Enterprise networks (campus Wi-Fi) will **not** work; the firmware does WPA2-Personal.
 
 ## Limitations
 

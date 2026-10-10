@@ -8,8 +8,25 @@ reference and a lightly-clouded reference, measured under consistent container g
 
 ## Sensor behaviour
 
-For common modules (e.g. SEN0189) the analog output **decreases as water gets cloudier**.
-So the clear-water voltage is the *high* reference and the cloudy voltage is the *low* one.
+OutfallWatch uses a **DIY LED + photoresistor (LDR)** pair, not a commercial probe. The LED
+shines across a water gap and the LDR measures the light that survives.
+
+With the LDR wired on the **high side** of the divider (3V3 → LDR → GPIO1, fixed resistor to
+GND — see WIRING.md), the voltage at the ADC **decreases as water gets cloudier**:
+
+| Water | Light reaching LDR | LDR resistance | Voltage at GPIO1 |
+| --- | --- | --- | --- |
+| Clear | high | low | **high** = `V_clear` |
+| Cloudy | low | high | **low** = `V_cloudy` |
+
+So the clear-water voltage is the *high* reference and the cloudy voltage the *low* one, which
+is what the formula and the validator below expect. **Swapping the divider legs inverts this**,
+makes `span` negative, and the firmware will latch `SENSOR_FAULT` — wire it as documented.
+
+Because this is an optical measurement, **geometry and stray light dominate**. The LED–LDR
+spacing must be mechanically fixed and the path light-tight, and the rig must be physically
+final *before* you calibrate. Moving the LED, changing the container, or letting room light in
+invalidates the references.
 
 ## Formula
 
@@ -36,5 +53,7 @@ relative_turbidity_index = clamp( 100 × (V_clear − V_current) / (V_clear − 
 - Separation `V_clear − V_cloudy` must be ≥ 50 mV (meaningful span) — rejected otherwise.
 - Stored with id, method, timestamp, and references (`Calibration` entity).
 
-Measured voltage values depend on your sensor, divider, and geometry — **there are no
-"official" calibration numbers**; you must measure your own.
+Measured voltage values depend on your LED brightness, LDR, divider resistor, gap width, and
+ambient shielding — **there are no "official" calibration numbers**; you must measure your own.
+The defaults shipped in `config.example.h` (2700 / 1100 mV) are placeholders from the original
+commercial-probe design and carry **no meaning** for an LED/LDR rig.

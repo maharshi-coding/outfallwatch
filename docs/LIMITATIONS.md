@@ -13,6 +13,13 @@ Stated plainly so judges and future users are never misled.
 - Temporal correlation with rain does **not** prove causation; the system never claims a
   rain event *caused* an anomaly.
 - The turbidity value is a **0–100 relative index**, not a certified NTU measurement.
+- The sensor is a **DIY LED + photoresistor pair**, not a calibrated turbidity probe. It
+  measures how much light crosses a water gap, which is affected by stray light, LED output
+  drift, LDR temperature sensitivity, bubbles, biofouling on the optical surfaces, and any
+  change in LED–LDR geometry. It is a **demonstration-grade optical substitute** and is
+  further from NTU than a commercial probe would be.
+- Flow rate from the turbine input is **not implemented** — no pin is read and no flow value
+  is transmitted or displayed.
 
 ## Technical limits
 

@@ -1,31 +1,73 @@
 # Wiring
 
-> GPIO numbers below are **defaults in `firmware/include/config.example.h`** for a generic
-> ESP32-S3 DevKit. **Verify against your exact Freenove variant** (FREENOVE_INTEGRATION.md)
-> and change `config.h` to match. Measure every voltage with a multimeter before connecting.
+> GPIO numbers below are the defaults in `firmware/include/config.example.h`, **flash-verified
+> on a Freenove ESP32-S3-WROOM (CAM variant)**. Measure every voltage with a multimeter before
+> connecting anything to a pin.
 
-## Turbidity sensor (5 V) → ESP32-S3 ADC via divider
+## Turbidity substitute: LED + photoresistor → GPIO1
 
-The sensor output can reach ~4.5 V. The ESP32-S3 ADC must not see more than ~3.3 V (and is
-most linear below that). A 10 kΩ / 15 kΩ divider scales it:
+The LED and the LDR sit on opposite sides of the water gap. The LDR forms a divider with a
+fixed resistor, and the ESP32 reads the midpoint on GPIO1 (ADC1_CH0).
 
 ```
-SEN0189 OUT ──[10kΩ]──┬──► ESP32-S3 GPIO1 (ADC1-capable)
-                      │
-                   [15kΩ]
-                      │
-                     GND
-SEN0189 GND ──────────┴──► ESP32-S3 GND
-SEN0189 VCC ───────────────► 5 V
+3V3 ──[150–220Ω]──►|LED  ── ( water gap ) ──  LDR
+                                               │
+3V3 ───────────────────────────[LDR]───────────┴──┬──► ESP32-S3 GPIO1 (ADC1_CH0)
+                                                  │
+                                              [10kΩ]
+                                                  │
+                                                 GND
 ```
 
-`V_adc = V_out × 15/(10+15) = 0.6 × V_out` → 4.5 V becomes **2.7 V**. This is *not* a
-substitute for confirming your board's safe ADC range. The firmware reconstructs the
-sensor's own voltage from `DIVIDER_R_TOP/BOTTOM` and reads mV via `analogReadMilliVolts`
-(ADC attenuation `ADC_11db` — verify for your board).
+**Wire the LDR on the HIGH side (3V3 → LDR → node) and the fixed resistor to GND.** That
+orientation gives the polarity the firmware already expects:
 
-**Polarity:** sensor output typically **falls** as water gets cloudier, so calibration
-requires `V_clear > V_cloudy` (CALIBRATION.md).
+| Water | Light on LDR | LDR resistance | Voltage at GPIO1 |
+| --- | --- | --- | --- |
+| Clear | high | **low** | **high** → this is `V_CLEAR_MV` |
+| Cloudy | low | **high** | **low** → this is `V_CLOUDY_MV` |
+
+So `V_CLEAR_MV > V_CLOUDY_MV`, which is exactly what `toIndex()` and the calibration validator
+require — **no firmware change needed**. If you swap the legs (fixed resistor on top, LDR to
+GND) the polarity inverts, `span` goes negative, and the firmware will report `SENSOR_FAULT`
+forever. Wire it this way round and the problem never arises.
+
+Pick the fixed resistor near your LDR's mid-range resistance for the best sensitivity; 10 kΩ is
+a sane starting point for a GL5528. There is **no 5 V anywhere in this path**, so the old
+10 kΩ/15 kΩ step-down divider is gone and `DIVIDER_R_TOP`/`DIVIDER_R_BOTTOM` in `config.h` are
+unused by the code.
+
+### Optional: drive the LED from a GPIO instead of 3V3
+
+Powering the LED from a spare GPIO lets the firmware light it **only during a sample**, which
+cuts the sensor's standing current (a genuine Green AI win, since the LED is the largest
+continuous draw here) and allows ambient-light subtraction — read dark, read lit, use the
+difference. This needs a small firmware change and is **not implemented yet**.
+
+## Flow sensor (turbine / DC motor) → GPIO2
+
+GPIO2 is free, safe on the CAM board, and **ADC1-capable**, so it works for either a motor used
+as an analog generator or a pulse-output flow sensor. ADC1 matters: ADC2 does not work while
+Wi-Fi is on.
+
+**A DC motor used as a generator must be scaled and clamped.** It can exceed 3.3 V when spun
+fast and goes *negative* when spun in reverse:
+
+```
+motor + ──[10kΩ]──┬──┬──► ESP32-S3 GPIO2
+                  │  │
+              [10kΩ] └─►|  Schottky to 3V3   (clamps over-voltage)
+                  │   ◄|─  Schottky to GND   (clamps negative)
+                 GND
+motor − ──────────┴──────► ESP32-S3 GND
+```
+
+For a 5 V hall-effect flow sensor (e.g. YF-S201) the open-collector pulse output instead needs
+a plain divider to 3.3 V, or a pull-up to 3V3 if you run the sensor's output open-drain.
+
+> **Not implemented in firmware yet.** No flow pin is read, and the telemetry packet has no
+> flow field — adding one means touching `main.cpp`, `TelemetryIn`, the `SensorReading` model,
+> and the UI. Tracked in IMPLEMENTATION_STATUS.md.
 
 ## DS18B20 temperature (optional)
 
@@ -38,7 +80,8 @@ DS18B20 DATA ──┬──► ESP32-S3 GPIO21
                │
               3V3      (omit if the breakout already has a pull-up)
 ```
-Match **physical wire colours to the probe's own datasheet**, not assumed colours.
+Match **physical wire colours to the probe's own datasheet**, not assumed colours. With no
+probe attached the firmware sends `temperature_c: null` — never a fabricated 0.
 
 ## Indicators
 
@@ -48,14 +91,24 @@ Match **physical wire colours to the probe's own datasheet**, not assumed colour
 | Amber LED | GPIO41 | ELEVATED / RECOVERING |
 | Red LED | GPIO40 | ALERT / SENSOR_FAULT |
 | Buzzer (optional) | GPIO47 | ALERT alarm (local, network-independent) |
-
-> **Freenove CAM board:** pins above avoid the OV2640 camera block (GPIO 4–18 range) and
-> flash/PSRAM (33–37), native USB (19/20), UART0 serial (43/44), and strapping pins
-> (0/45/46). All are broken out on the GPIO extension board.
 | Rain button (optional) | — (set in config) | manual `storm_active` toggle |
 
 Each LED needs a current-limiting resistor sized for the pin's safe drive current. The
 indicators are driven by the **local** state machine, so they work even with Wi-Fi down.
+
+## Pin map summary
+
+| GPIO | Use | Status |
+| --- | --- | --- |
+| 1 | turbidity substitute (LDR divider), ADC1_CH0 | in firmware |
+| 2 | flow sensor, ADC1_CH1 | **planned, not in firmware** |
+| 21 | DS18B20 1-Wire | in firmware |
+| 40 / 41 / 42 | red / amber / green indicator LEDs | in firmware |
+| 47 | buzzer | in firmware |
+
+> **Freenove CAM board:** these avoid the OV2640 camera block (GPIO 4–18), flash/PSRAM (33–37),
+> native USB (19/20), UART0 serial (43/44), and strapping pins (0/45/46). All are broken out on
+> the GPIO extension board.
 
 ## Build & flash
 
@@ -66,5 +119,6 @@ pio run                                         # compile
 pio run -t upload                               # flash
 pio device monitor                              # serial logs
 ```
-PlatformIO was **not available in this build environment**, so the firmware is not
-flash-verified — see IMPLEMENTATION_STATUS.md.
+
+Verified on this hardware: compiles clean, uploads over the CH343 UART bridge, boots, and
+streams HARDWARE telemetry over Wi-Fi. See IMPLEMENTATION_STATUS.md.

@@ -38,6 +38,9 @@ static uint32_t lastSampleMs = 0, lastBackoffMs = 0;
 static uint16_t samplesSinceTx = 0;
 static uint32_t msgCount = 0, byteCount = 0, sampleCount = 0;
 static uint32_t readingSeq = 0;
+// Per-boot nonce: readingSeq restarts at 0 on every boot, so without this a power cycle
+// re-emits reading_ids the backend already stored and silently drops them as duplicates.
+static uint32_t bootId = 0;
 
 // bounded offline buffer (ring)
 static String offlineBuf[OFFLINE_BUFFER_MAX];
@@ -139,7 +142,8 @@ static uint32_t currentIntervalMs() {
 
 static String buildPacket(float adcMv, float index, float tempC, bool stormBtn) {
   JsonDocument doc;
-  char rid[48]; snprintf(rid, sizeof(rid), "%s-%lu", DEVICE_ID, (unsigned long)++readingSeq);
+  char rid[48]; snprintf(rid, sizeof(rid), "%s-%08lx-%lu", DEVICE_ID,
+                          (unsigned long)bootId, (unsigned long)++readingSeq);
   doc["reading_id"] = rid;
   doc["device_id"] = DEVICE_ID;
   doc["observed_at"] = nullptr;         // no synced RTC: backend stamps receive time honestly
@@ -184,6 +188,7 @@ static void flushOffline() {
 // ----------------------------------------------------------------- setup / loop
 void setup() {
   Serial.begin(115200);
+  bootId = esp_random();  // hardware RNG; unique reading_id namespace per boot
   pinMode(LED_GREEN_PIN, OUTPUT); pinMode(LED_AMBER_PIN, OUTPUT); pinMode(LED_RED_PIN, OUTPUT);
 #if BUZZER_PIN >= 0
   pinMode(BUZZER_PIN, OUTPUT);

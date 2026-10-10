@@ -5,8 +5,54 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
 ## Environment verified
 
 - node v22.23.2, npm 10.9.8, Python 3.14.6 — confirmed.
-- PlatformIO installed → **firmware compiles clean** for esp32-s3-devkitc-1 (SUCCESS, 0 warnings, firmware.bin 874 KB). Not flashed (no board).
-- No ESP32-S3 board present → no physical sensor tests.
+- PlatformIO installed → **firmware compiles clean** for esp32-s3-devkitc-1 (SUCCESS, firmware.bin 874 KB).
+- **Flash-verified 2026-10-09 on a real Freenove ESP32-S3-WROOM (CAM variant)**: uploaded over the
+  CH343 UART bridge (`/dev/cu.usbmodem*`, VID 1A86:55D3) at 921600 baud, hash verified, boots and
+  runs. Serial @115200 confirmed: baseline established after 12 samples (`base=100.0`), bounded
+  offline queue increments on the 6-sample heartbeat (`buf` 1→2→3) while Wi-Fi is unconfigured.
+  RAM 14.7%, Flash 26.8%.
+- **End-to-end HARDWARE telemetry verified 2026-10-09**: board joined a 2.4 GHz WPA2 hotspot and
+  POSTed to the backend over LAN HTTP. Serial showed `msgs` 3→4→5 at the 60s heartbeat cadence
+  with `buf=0`, and the queued offline reading flushed on reconnect. `GET /api/devices` lists
+  `outfallwatch-esp32-01` as `source: HARDWARE`, `connection_status: ONLINE`; readings persist with
+  `source: HARDWARE` and `temperature_c: null` (no probe → null, never a fabricated 0).
+  Note: ESP32-S3 is **2.4 GHz only** — a 5 GHz-only AP fails silently at `WiFi.begin()`.
+- **Config invariant**: the firmware heartbeat (`HEARTBEAT_EVERY` × `NORMAL_INTERVAL_MS`) must stay
+  **under** the backend's `stale_after_seconds` (30s), or a perfectly healthy board flaps
+  ONLINE→STALE between heartbeats. Observed and fixed 2026-10-09: 6×10s=60s heartbeat flapped every
+  cycle; `HEARTBEAT_EVERY` lowered to 2 (20s heartbeat) → 0 STALE across 10 polls / 72s. The
+  firmware's `msgCount`/`byteCount` are serial-only and never enter the packet, so heartbeat rate
+  does not affect the Green AI figures (those come from seeded replays).
+- **Fixed 2026-10-09 — `reading_id` collision across reboots.** `readingSeq` restarts at 0 on every
+  boot, and the backend treats `reading_id` as the PK and skips rows it already has
+  (`ingestion.py`, "idempotent on reading_id"). So after any power cycle the board re-emitted IDs
+  that already existed and they were **silently dropped** — while `device.last_seen` still updated
+  on that path, so the dashboard showed ONLINE / "updated just now" with a frozen chart, and serial
+  showed `msgs` climbing. Observed live: device ONLINE, last_seen 11s ago, newest stored reading
+  11.5 minutes old. The dead window scaled with row count (22 rows ≈ 7 min; an hour of uptime
+  ≈ an hour of silence). Fix: a per-boot `esp_random()` nonce in the id
+  (`outfallwatch-esp32-01-0c659f1f-1`), which keeps retry-idempotency *within* a boot while making
+  readings from different boots distinct. Verified: post-reboot rows stored immediately, +1 per 20s.
+- Unplugging USB cuts **power**, not just telemetry — it is a device-death test (→ STALE after 30s),
+  not an offline-buffer test. To exercise the buffer/flush path, drop Wi-Fi with the board powered.
+- **Hardware design finalised 2026-10-09 — DIY optical sensor, not a commercial probe.** The
+  turbidity input is an **LED + photoresistor** pair on GPIO1 running at 3.3 V (no 5 V, no
+  step-down divider). Wiring the LDR on the high side preserves the firmware's required
+  `V_CLEAR > V_CLOUDY` polarity, so **no firmware change was needed**. HARDWARE.md, WIRING.md,
+  CALIBRATION.md and LIMITATIONS.md updated to match; the `DIVIDER_R_*` constants are now
+  explicitly documented as unused. Power is a USB power bank (untethered run verified).
+- **NOT IMPLEMENTED — turbine/flow sensor.** The final design feeds a turbine or DC-motor flow
+  signal into the ESP32 (planned GPIO2, ADC1_CH1). No pin is read, `TelemetryIn` has no flow
+  field, the `SensorReading` model has no column, and nothing is shown in the UI. Wiring and
+  the clamp/divider protection a motor-generator needs are documented in WIRING.md, but this
+  is design-only. Do not present it as working.
+- Hardware alert path caveat: with GPIO1 unwired the index clamps to 100, so the baseline settles at
+  the ceiling and escalation (+30) is unreachable — the board **cannot** alert until a sensor or a
+  pot/jumper on GPIO1 lets the baseline establish low and then rise.
+- Still physically unverified: no sensor wired to GPIO1 (floating input reads ~10–24 mV of noise
+  → index clamps to 100, as designed), LEDs/buzzer not observed, no DS18B20 attached
+  (`getDeviceCount()==0`), and no real turbidity calibration (`V_CLEAR_MV`/`V_CLOUDY_MV` still at
+  template defaults, so the index carries no physical meaning yet).
 
 ## Tested commands & results
 
@@ -35,7 +81,7 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
 | NOAA water levels | **WORKING** | live real-time + historical (24 h hourly) verified; station 8775296; fixture fallback offline. |
 | GCOOS oceanographic/WQ | **WORKING** | live ERDDAP CBI_042 verified (temp 29.4 °C, salinity 27.9 PSU); fixture fallback offline. |
 | _(removed by request)_ | — | TCEQ, Open-Meteo, GBIF, iNaturalist, NASA Earthdata, OpenWeatherMap deleted. |
-| ESP32-S3 firmware | **PARTIAL** | full source + wiring; **compiles clean** (PlatformIO); not flash-verified (no board). |
+| ESP32-S3 firmware | **WORKING** (unwired) | compiles clean; **flashed, booted and streaming HARDWARE telemetry** from a real Freenove ESP32-S3-WROOM CAM to the backend over Wi-Fi; detection, baseline, bounded offline queue and reconnect-flush all verified. Sensor/indicator wiring + turbidity calibration still unverified. |
 | CodeCarbon | **WORKING** | ran 50k-replay host benchmark; measured ≈49.5 mWh / 23.6 mg CO₂ (M2, ESTIMATED); served at `/api/energy/codecarbon`, shown in Green AI Lab. |
 | TFLM / ESP-NN | **NOT_IMPLEMENTED** | no NN deployed; honest. |
 
@@ -50,7 +96,9 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
 
 ## Remaining next steps (priority order)
 
-1. Flash firmware on the actual board; reconcile pins; record verified vs assumed.
+1. (done) Flashed, booted and streaming real HARDWARE telemetry to the backend over Wi-Fi.
+   Remaining: wire the turbidity sensor to GPIO1 and run the calibration wizard to set
+   `V_CLEAR_MV`/`V_CLOUDY_MV`; confirm LEDs/buzzer physically; reconcile pins verified vs assumed.
 2. Replace the TCEQ fixture with an authentic export; flip status to WORKING.
 3. (done) CodeCarbon host benchmark run; measured figures in GREEN_AI.md + Green AI Lab.
 4. Wire a verified GCOOS ERDDAP series.

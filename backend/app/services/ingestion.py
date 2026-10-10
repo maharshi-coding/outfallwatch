@@ -70,8 +70,14 @@ def _resolve_index(db: Session, t: TelemetryIn) -> tuple[float | None, list[str]
 def ingest_reading(db: Session, t: TelemetryIn) -> tuple[models.SensorReading, models.MonitoringEvent | None]:
     device = db.get(models.Device, t.device_id)
     if device is None:
-        device = models.Device(device_id=t.device_id, source=t.source,
-                               latitude=27.5801, longitude=-97.2167)  # Bob Hall Pier area (demo pin)
+        # Label honestly by source: a real board on a bench is NOT the simulated outfall site,
+        # and the column default says "Simulated ...", which would mislabel HARDWARE devices.
+        device = models.Device(
+            device_id=t.device_id, source=t.source,
+            location_label=("Bench Prototype — Tabletop Demo (not field-deployed)"
+                            if t.source == "HARDWARE"
+                            else "Simulated Corpus Christi Outfall — Demo Site"),
+            latitude=27.5801, longitude=-97.2167)  # Bob Hall Pier area (demo pin, unverified)
         db.add(device)
 
     index, flags = _resolve_index(db, t)

@@ -27,9 +27,13 @@
 #define V_CLEAR_MV       2700.0f
 #define V_CLOUDY_MV      1100.0f
 
-// ---- Divider ratio for reconstructing the sensor's own output voltage ----
-#define DIVIDER_R_TOP    10000.0f   // to sensor OUT
-#define DIVIDER_R_BOTTOM 15000.0f   // to GND  -> V_adc = V_out * Rb/(Rt+Rb)
+// ---- Divider ratio (UNUSED by the code; kept for documentation only) ----
+// The build uses a DIY LED + photoresistor rig running entirely at 3.3 V, so there is no
+// 5 V step-down divider any more. toIndex() works directly on mV at the ADC pin, so these
+// values do not affect behaviour. Wire the LDR on the HIGH side (3V3 -> LDR -> GPIO1,
+// fixed resistor to GND) so voltage FALLS as water clouds and V_CLEAR > V_CLOUDY holds.
+#define DIVIDER_R_TOP    10000.0f
+#define DIVIDER_R_BOTTOM 15000.0f
 
 // ---- Detection (keep in sync with backend demo defaults) ----
 #define ESCALATE_INDEX_DELTA     30.0f
