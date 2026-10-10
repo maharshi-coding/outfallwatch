@@ -3,6 +3,9 @@
 **Low-power coastal runoff change-detection & early-warning system.**
 IslanderHack · Corpus Christi, TX · *Green AI & Resource Efficiency* track · Topic: Coastal Conservation.
 
+[![CI](https://github.com/maharshi-coding/outfallwatch/actions/workflows/ci.yml/badge.svg)](https://github.com/maharshi-coding/outfallwatch/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00BFA6.svg)](LICENSE)
+
 ### 🔗 Live demo
 **https://outfallwatch.onrender.com** — open it and click **Launch Storm Demo**.
 

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- backend: engine + API + green-ai tests (offline, throwaway sqlite) ----
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt
+      - name: Backend tests
+        working-directory: backend
+        run: python -m pytest -q
+
+      # ---- frontend: component tests + type-check + production build ----
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm run test
+      - name: Type-check + build
+        working-directory: frontend
+        run: npm run build
+
+      # ---- firmware: compile for the verified ESP32-S3 target ----
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Build firmware
+        working-directory: firmware
+        run: |
+          cp include/config.example.h include/config.h   # template; no real credentials in CI
+          pio run
