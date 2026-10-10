@@ -4,7 +4,7 @@
 IslanderHack · Corpus Christi, TX · *Green AI & Resource Efficiency* track · Topic: Coastal Conservation.
 
 ### 🔗 Live demo
-**https://convergence-guided-americas-gathered.trycloudflare.com** — open it and click **Launch Storm Demo**.
+**https://stretch-offices-likely-spray.trycloudflare.com** — open it and click **Launch Storm Demo**.
 
 > ⚠️ That URL is a **temporary tunnel** to the dev machine and is only live while the demo is running.
 > It changes each time the tunnel restarts. To run your own, or deploy a permanent link, see
