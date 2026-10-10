@@ -1,0 +1,10 @@
+# Render blueprint — deploys OutfallWatch as one Docker web service (API + dashboard).
+# Render dashboard → New → Blueprint → pick this repo → Apply.
+services:
+  - type: web
+    name: outfallwatch
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
