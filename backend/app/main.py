@@ -64,8 +64,10 @@ if (FRONTEND_DIST / "index.html").exists():
         # /api/* and /docs are matched earlier; everything else is the SPA.
         candidate = FRONTEND_DIST / full_path
         if full_path and candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(FRONTEND_DIST / "index.html")  # client-side routing fallback
+            return FileResponse(candidate)  # hashed assets — safe to cache
+        # index.html must never be cached, or browsers keep loading stale asset hashes
+        # after a redeploy. The hashed /assets/* it references stay cacheable.
+        return FileResponse(FRONTEND_DIST / "index.html", headers={"Cache-Control": "no-cache"})
 else:
     @app.get("/")
     def root() -> dict:
