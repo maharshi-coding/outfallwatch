@@ -2,7 +2,7 @@
 
 Honest status of every official IslanderHack resource. **A link in the README is not an
 integration.** Status reflects verified runtime behaviour. Live status is also served at
-`GET /api/integrations/status` and shown on the **Data & Settings** page.
+`GET /api/integrations/status` and shown on the **Coastal Conditions** page.
 
 Legend: **WORKING** (real source verified, parsed, stored, shown) · **PARTIAL** (importer
 works but data is a labelled fixture, or live fetch fell back offline) · **UNAVAILABLE**

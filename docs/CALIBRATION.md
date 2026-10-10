@@ -62,7 +62,7 @@ relative_turbidity_index = clamp( 100 × (V_clear − V_current) / (V_clear − 
 
 > **Which calibration actually applies?** The firmware computes the index onboard and sends
 > it, and `_resolve_index` returns the device's own value whenever one is present. The
-> dashboard's **Data & Settings → Turbidity calibration** (and `POST /api/calibrations`) is a
+> `POST /api/calibrations` endpoint is a
 > **fallback**, used only for a device that sends `turbidity_raw_mv` with no index. For this
 > hardware, `config.h` is authoritative — editing the dashboard values changes nothing.
 

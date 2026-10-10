@@ -39,7 +39,7 @@
 - **(1:45) Green AI** — run the comparison; "same seeded replay, two strategies. Adaptive
   sends ~89% fewer messages and still catches the event. Energy is an **estimate** from a
   documented model — not a measured chip current; we're explicit about that."
-- **(2:20) Honesty & integrations** — show Data & Settings statuses; "NOAA is real when
+- **(2:20) Honesty & integrations** — show the Coastal Conditions statuses; "NOAA is real when
   online; TCEQ here is a labelled example until a real export is dropped in; GCOOS we
   couldn't verify, so it says so."
 - **(2:40) Close** — "It doesn't replace the lab. It tells a small team *where to look

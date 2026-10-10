@@ -11,7 +11,6 @@ const StormSimulator = lazy(() => import("./pages/StormSimulator").then((m) => (
 const Alerts = lazy(() => import("./pages/Alerts").then((m) => ({ default: m.Alerts })));
 const GreenAiLab = lazy(() => import("./pages/GreenAiLab").then((m) => ({ default: m.GreenAiLab })));
 const CoastalConditions = lazy(() => import("./pages/CoastalConditions").then((m) => ({ default: m.CoastalConditions })));
-const DataSources = lazy(() => import("./pages/DataSources").then((m) => ({ default: m.DataSources })));
 
 function Loading() {
   return (
@@ -32,7 +31,6 @@ const router = createBrowserRouter([
       { path: "alerts", element: <Suspense fallback={<Loading />}><Alerts /></Suspense> },
       { path: "green-ai", element: <Suspense fallback={<Loading />}><GreenAiLab /></Suspense> },
       { path: "coastal", element: <Suspense fallback={<Loading />}><CoastalConditions /></Suspense> },
-      { path: "data-sources", element: <Suspense fallback={<Loading />}><DataSources /></Suspense> },
     ],
   },
 ]);

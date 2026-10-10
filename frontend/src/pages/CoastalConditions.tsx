@@ -9,6 +9,7 @@ import { api } from "@/services/api";
 import { useAsync } from "@/hooks/useAsync";
 import { Panel, SourceBadge, Empty, IntegrationBadge } from "@/components/common/ui";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
+import { IntegrationStatus } from "@/components/common/IntegrationStatus";
 import { Button } from "@/components/ui/button";
 import { EChart, OCEAN } from "@/components/charts/EChart";
 import type { ExternalObservation, IntStatus } from "@/types";
@@ -48,6 +49,8 @@ export function CoastalConditions() {
           <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> {refreshing ? "Fetching…" : "Refresh live data"}
         </Button>
       </div>
+
+      <IntegrationStatus />
 
       <NoaaPanel rows={byProvider["NOAA"] ?? []} status={statusOf("NOAA")} />
       <GcoosPanel rows={byProvider["GCOOS"] ?? []} status={statusOf("GCOOS")} />

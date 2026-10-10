@@ -4,7 +4,6 @@ import { motion } from "motion/react";
 import {
   Activity,
   AlertTriangle,
-  Database,
   Gauge as GaugeIcon,
   LayoutDashboard,
   Leaf,
@@ -22,7 +21,6 @@ const NAV = [
   { to: "/alerts", label: "Alerts & Incidents", icon: AlertTriangle },
   { to: "/green-ai", label: "Green AI Lab", icon: Leaf },
   { to: "/coastal", label: "Coastal Conditions", icon: MapIcon },
-  { to: "/data-sources", label: "Data & Settings", icon: Database },
 ];
 
 export function Layout() {

@@ -56,8 +56,8 @@ GPIO38 ──[150–220Ω]──▶|LED  ── ( water gap ) ──  LDR ──
 > **Calibrate in `config.h`, not on the dashboard.** The firmware computes the index
 > onboard and sends it, and `_resolve_index` uses the device's own value whenever one is
 > present — the dashboard's V_clear/V_cloudy are only a **fallback** for devices that send
-> raw mV without an index. Editing them on the Data & Settings page will not change your
-> board's readings. Set them in `config.h` and reflash.
+> raw mV without an index. `POST /api/calibrations` will not change your board's readings.
+> Set them in `config.h` and reflash.
 
 Set `SENSOR_LED_PIN -1` to keep the LED permanently wired on and skip the subtraction.
 

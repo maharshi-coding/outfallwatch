@@ -11,7 +11,7 @@ cd backend && . .venv/bin/activate && uvicorn app.main:app --port 8000
 cd frontend && npm run dev
 ```
 Open <http://localhost:5173>. Confirm the header shows **"Live stream connected"** (green).
-If you ran a demo already, click **Data & Settings** is not needed — just press **Reset** in
+If you ran a demo already, just press **Reset** in
 the Storm Simulator first.
 
 ## The run
@@ -25,7 +25,7 @@ the Storm Simulator first.
 | 1:15 | Open **Alerts & Incidents** | The incident with exact thresholds, timestamps, severity, and the recommendation to inspect + sample. Acknowledge it. |
 | 1:40 | Open **Green AI Lab** → **Run comparison** | Fixed vs adaptive on the same seed: ~**89% fewer messages**, energy **ESTIMATED**, **0 missed** anomalies, honest methodology + disclaimer. |
 | 2:10 | Open **Coastal Conditions** | NOAA/TCEQ official data with source, time, units — all labelled FIXTURE/OFFICIAL, visually separate from sensor data. |
-| 2:30 | Open **Data & Settings** | Live integration statuses (WORKING/PARTIAL/UNAVAILABLE/NOT_IMPLEMENTED), threshold + calibration controls that actually persist. |
+| 2:30 | Open **Coastal Conditions** | Live integration statuses (WORKING/PARTIAL/UNAVAILABLE/NOT_IMPLEMENTED) straight from the backend, beside the official NOAA/GCOOS observations they describe. |
 | 2:50 | Back to **Storm Simulator**, pick **D · Recovery**, Start | Show the full lifecycle resolve: ALERT → RECOVERING → NORMAL, event resolved. |
 
 ## Other scenarios to show robustness

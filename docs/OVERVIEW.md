@@ -51,12 +51,6 @@ Institute) oceanographic / water-quality readings — with source, time, and uni
 → *With hardware:* live **official** data (independent of the prototype sensor), kept
 deliberately separate from the prototype readings.
 
-### 7. Data & Settings (`/data-sources`) — ⚪ config (🔵 live statuses)
-Live integration statuses (NOAA/GCOOS), the detection-threshold editor, and the two-point
-calibration wizard.
-→ *With hardware:* where you set **calibration** (V_clear/V_cloudy) and thresholds that shape
-how real readings are interpreted.
-
 ## Where live hardware data shows up
 
 | Page | On hardware integration |
@@ -64,7 +58,6 @@ how real readings are interpreted.
 | Mission Control, Live Monitoring, Alerts | 🟢 real ESP32 data |
 | Coastal Conditions | 🔵 live NOAA/GCOOS (not the sensor) |
 | Storm Simulator, Green AI Lab | 🟡 simulator / benchmark |
-| Data & Settings | ⚪ config + 🔵 live statuses |
 
 ## Tech stack
 
