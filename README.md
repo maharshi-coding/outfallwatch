@@ -83,7 +83,7 @@ SQLite + SSE → React dashboard`, with **official** coastal data kept in a sepa
 `ExternalObservation` table and never blended into sensor readings. Every record is
 labelled `HARDWARE`, `SIMULATION`, `IMPORTED_OFFICIAL`, or `TEST_FIXTURE`.
 
-Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · API: [`docs/API.md`](docs/API.md)
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · API: [`docs/API.md`](docs/API.md) · Page-by-page tour + tech stack: [`docs/OVERVIEW.md`](docs/OVERVIEW.md)
 
 ## Hardware
 
