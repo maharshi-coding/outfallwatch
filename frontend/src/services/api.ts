@@ -1,4 +1,5 @@
 import type {
+  CodeCarbonResult,
   Device,
   EnergyCompare,
   ExternalObservation,
@@ -57,6 +58,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ scenario, seed, intensity }),
     }),
+  codecarbon: () => j<CodeCarbonResult>("/energy/codecarbon"),
   configuration: () => j<Record<string, number>>("/configuration"),
   patchConfiguration: (patch: Record<string, number>) =>
     j<Record<string, number>>("/configuration", { method: "PATCH", body: JSON.stringify(patch) }),

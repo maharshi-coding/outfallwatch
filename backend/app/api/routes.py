@@ -218,6 +218,12 @@ def energy_summary(db: Session = Depends(get_db)) -> dict:
                       "created_at": r.created_at.isoformat()} for r in rows]}
 
 
+@router.get("/energy/codecarbon")
+def energy_codecarbon() -> dict:
+    """Real CodeCarbon host-footprint benchmark result (or {"ran": false})."""
+    return greenai.codecarbon_result()
+
+
 @router.post("/energy/compare")
 def energy_compare(body: EnergyCompareIn, db: Session = Depends(get_db)) -> dict:
     result = greenai.compare(body.scenario, body.seed, body.intensity)

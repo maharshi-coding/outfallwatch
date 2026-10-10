@@ -92,6 +92,20 @@ export interface EnergyStrategy {
   energy_kind: string;
 }
 
+export interface CodeCarbonResult {
+  ran: boolean;
+  measured_at?: string;
+  iterations?: number;
+  workload?: string;
+  duration_s?: number;
+  energy_kwh?: number;
+  co2_kg?: number;
+  host?: string;
+  cpu_model?: string;
+  kind?: string;
+  note?: string;
+}
+
 export interface EnergyCompare {
   scenario: string;
   seed: number;

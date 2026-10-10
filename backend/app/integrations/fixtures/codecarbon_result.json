@@ -1,0 +1,13 @@
+{
+  "ran": true,
+  "measured_at": "2026-10-10T00:50:51.038381+00:00",
+  "iterations": 50000,
+  "workload": "Green AI fixed-vs-adaptive replay (scenario B)",
+  "duration_s": 14.57,
+  "energy_kwh": 4.948988074458075e-05,
+  "co2_kg": 2.3560025898972404e-05,
+  "host": "Darwin arm64",
+  "cpu_model": "Apple M2",
+  "kind": "ESTIMATED",
+  "note": "Host computer footprint via CodeCarbon. NOT the ESP32 sensor-node energy."
+}

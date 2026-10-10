@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Leaf } from "lucide-react";
 import { api } from "@/services/api";
+import { useAsync } from "@/hooks/useAsync";
 import { Panel, Stat, Empty } from "@/components/common/ui";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +15,7 @@ export function GreenAiLab() {
   const [result, setResult] = useState<EnergyCompare | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const cc = useAsync(() => api.codecarbon(), { pollMs: 0 });
 
   async function run() {
     setBusy(true);
@@ -89,13 +91,33 @@ export function GreenAiLab() {
 
           <Panel title="CodeCarbon · on-device TinyML">
             <div className="grid gap-3 text-sm text-mist/60 sm:grid-cols-2">
-              <div className="rounded-lg border border-white/10 p-3">
-                <div className="badge bg-coral/15 text-coral">NOT IMPLEMENTED</div>
-                <p className="mt-2">CodeCarbon was not run in this build environment. It measures the <b>host</b> computer's footprint, never the ESP32's current. Enable via <span className="font-mono text-cyan">scripts/benchmark_codecarbon.py</span>.</p>
-              </div>
-              <div className="rounded-lg border border-white/10 p-3">
-                <div className="badge bg-coral/15 text-coral">NOT IMPLEMENTED</div>
-                <p className="mt-2">No neural network is deployed on-device. The edge detector is a transparent deterministic rule engine. Calling that "neural AI" would be dishonest; the Green-AI win is <b>adaptive edge processing</b>, measured above.</p>
+              {/* CodeCarbon — real measured host footprint */}
+              {cc.data?.ran ? (
+                <div className="rounded-lg border border-teal/25 bg-teal/5 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="badge bg-teal/15 text-teal">MEASURED · HOST</span>
+                    <span className="badge bg-white/10 text-mist/60">{cc.data.kind}</span>
+                  </div>
+                  <p className="mt-2">CodeCarbon host footprint of running the Green-AI replay
+                    {" "}<b>{cc.data.iterations?.toLocaleString()}×</b> ({cc.data.duration_s}s) on {cc.data.cpu_model}:</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Stat label="Host energy" value={(cc.data.energy_kwh ?? 0) * 1e6} unit="mWh" decimals={1} tone="teal" />
+                    <Stat label="Host CO₂" value={(cc.data.co2_kg ?? 0) * 1e6} unit="mg" decimals={1} tone="teal" />
+                  </div>
+                  <p className="mt-2 text-xs text-amber/80">⚠ This is the <b>host computer's</b> footprint — <b>not</b> the ESP32's current draw (that needs a hardware power meter).</p>
+                  <p className="mt-1 text-[11px] text-mist/40">measured {cc.data.measured_at ? new Date(cc.data.measured_at).toLocaleDateString() : "—"} · re-run via <span className="font-mono">scripts/benchmark_codecarbon.py</span></p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-white/10 p-3">
+                  <div className="badge bg-coral/15 text-coral">NOT RUN</div>
+                  <p className="mt-2">CodeCarbon benchmark not present. It measures the <b>host</b> computer's footprint, never the ESP32's current. Run <span className="font-mono text-cyan">scripts/benchmark_codecarbon.py</span>.</p>
+                </div>
+              )}
+
+              {/* On-device TinyML — deliberate, honest design decision (not a failure) */}
+              <div className="rounded-lg border border-cyan/20 bg-cyan/5 p-3">
+                <div className="badge bg-cyan/15 text-cyan">DESIGN DECISION</div>
+                <p className="mt-2">We deliberately ship a <b>transparent deterministic rule engine</b> at the edge instead of a neural net — labelling thresholds as "neural AI" would be dishonest. The genuine Green-AI win is <b>adaptive edge processing</b> (measured above). On-device TFLM/ESP-NN is a documented future step.</p>
               </div>
             </div>
           </Panel>

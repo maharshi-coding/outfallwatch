@@ -3,8 +3,10 @@ environment and report samples, messages, bytes, detection latency, missed anoma
 and an explicitly ESTIMATED energy figure (never presented as a measured mW draw)."""
 from __future__ import annotations
 
+import json
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from app.config import get_settings
 from app.monitoring.engine import DetectionEngine, EngineConfig
@@ -16,6 +18,18 @@ PACKET_BYTES = 220  # typical telemetry JSON packet, bytes (ESTIMATED, see GREEN
 E_SAMPLE_MWH = 0.0008   # one ADC+MCU wake-and-read
 E_TX_MWH = 0.012        # one Wi-Fi radio-on + POST (dominant cost)
 E_IDLE_MWH_PER_S = 0.0002  # light-sleep idle draw per second
+
+
+_CODECARBON_PATH = Path(__file__).resolve().parent.parent / "integrations" / "fixtures" / "codecarbon_result.json"
+
+
+def codecarbon_result() -> dict:
+    """The committed CodeCarbon host benchmark (written by scripts/benchmark_codecarbon.py).
+    Returns {"ran": False} if the benchmark hasn't been run."""
+    try:
+        return json.loads(_CODECARBON_PATH.read_text())
+    except Exception:
+        return {"ran": False}
 
 
 def _engine_cfg() -> EngineConfig:
