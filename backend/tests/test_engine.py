@@ -76,3 +76,45 @@ def test_baseline_not_learned_during_storm():
         eng.process(observed_at=base + timedelta(seconds=p.t),
                     turbidity_index=p.index, storm_active=p.storm_active)
     assert eng.baseline is not None and eng.baseline < 35  # near ~20, not dragged to storm level
+
+
+# --------------------------------------------------- flow-gated optical subsystem (IDLE)
+def _eng_at():
+    return DetectionEngine(EngineConfig()), datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def test_idle_is_not_a_sensor_fault():
+    """A no-flow heartbeat carries a null index BY DESIGN. It must read IDLE, not
+    SENSOR_FAULT, and must not invent a value."""
+    eng, base = _eng_at()
+    r = eng.process(observed_at=base, turbidity_index=None, idle=True)
+    assert r.health == "IDLE"
+    assert r.smoothed_index is None          # nothing measured, nothing invented
+    assert r.event_action is None
+
+    # the same null WITHOUT the flow gate is still a genuine fault
+    r2 = eng.process(observed_at=base + timedelta(seconds=10), turbidity_index=None)
+    assert r2.health == "SENSOR_FAULT"
+
+
+def test_idle_preserves_state_and_does_not_escalate():
+    """A dry gap must not accumulate toward an escalation, and must not reset the
+    monitoring state the device had reached."""
+    eng, base = _eng_at()
+    for i in range(12):                                   # settle a baseline near 10
+        eng.process(observed_at=base + timedelta(seconds=i), turbidity_index=10.0)
+
+    # one high sample starts the persistence clock
+    t = base + timedelta(seconds=20)
+    eng.process(observed_at=t, turbidity_index=90.0)
+
+    # ... then the water stops for well past the escalate persistence window
+    for i in range(1, 10):
+        r = eng.process(observed_at=t + timedelta(seconds=i * 10), turbidity_index=None, idle=True)
+        assert r.health == "IDLE"
+        assert r.state == "NORMAL"                        # held, never escalated on a dry gap
+
+    # a single high sample after the gap must not instantly escalate either: the timer
+    # was cleared, so persistence has to be re-earned from now.
+    r = eng.process(observed_at=t + timedelta(seconds=200), turbidity_index=90.0)
+    assert r.state == "NORMAL"

@@ -29,7 +29,7 @@ static int baselineCount = 0;
 static bool baselineSet = false;
 static float baselineValue = 0;
 
-enum State { NORMAL, ELEVATED, ALERT, RECOVERING, SENSOR_FAULT };
+enum State { NORMAL, ELEVATED, ALERT, RECOVERING, SENSOR_FAULT, IDLE };
 static State state = NORMAL;
 static uint32_t aboveSince = 0, belowSince = 0;
 
@@ -67,6 +67,46 @@ static float readTurbidityMv() {
   return (float)acc / N;  // mV at the ADC pin (after the divider)
 }
 
+// Turbine/motor output in mV. Gates the whole optical subsystem.
+#if FLOW_ADC_PIN >= 0
+static float readFlowMv() {
+  uint32_t acc = 0; const int N = 8;
+  for (int i = 0; i < N; i++) acc += analogReadMilliVolts(FLOW_ADC_PIN);
+  return (float)acc / N;
+}
+#endif
+
+// Pulse the LED and read the photoresistor divider (LDR on top, R2 to GND, so the
+// voltage FALLS as the water gets murkier). When the LED is on a GPIO a dark reading is
+// taken first and subtracted, which cancels ambient room light -- the dominant error for
+// an open optical path. IMPORTANT: calibrate V_CLEAR_MV/V_CLOUDY_MV against this same
+// dark-corrected value, not against a raw multimeter reading.
+// ponytail: blocking delay() for LED settling; at a 10s sample period 120ms is noise, and
+// a non-blocking settle state machine would cost more than it saves.
+static float measureOptical() {
+#if SENSOR_LED_PIN >= 0
+  digitalWrite(SENSOR_LED_PIN, LOW);
+  delay(LED_SETTLE_MS);
+  float dark = readTurbidityMv();
+  digitalWrite(SENSOR_LED_PIN, HIGH);
+  delay(LED_SETTLE_MS);
+  float lit = readTurbidityMv();
+  digitalWrite(SENSOR_LED_PIN, LOW);   // off between samples -- no standing LED current
+  float corrected = lit - dark;
+  return corrected < 0 ? 0 : corrected;
+#else
+  return readTurbidityMv();
+#endif
+}
+
+// Water condition for the dashboard. AIR must be separated from CLEAN: an empty gap
+// passes MORE light than clean water, so without this check "no water present" would be
+// reported as the cleanest possible sample.
+static const char *classifyWater(float correctedMv, float index) {
+  if (correctedMv >= V_AIR_MIN_MV) return "AIR_GAP";
+  return index >= MURKY_INDEX_MIN ? "MURKY" : "CLEAN";
+}
+
 // clamp(100*(Vclear - V)/(Vclear - Vcloudy), 0, 100). Returns -1 on invalid calibration.
 static float toIndex(float adcMv) {
   float span = V_CLEAR_MV - V_CLOUDY_MV;
@@ -76,6 +116,7 @@ static float toIndex(float adcMv) {
 }
 
 static void setIndicators(State s) {
+  // IDLE drives every indicator off: no water to watch, so nothing burns current.
   digitalWrite(LED_GREEN_PIN, s == NORMAL);
   digitalWrite(LED_AMBER_PIN, s == ELEVATED || s == RECOVERING);
   digitalWrite(LED_RED_PIN, s == ALERT || s == SENSOR_FAULT);
@@ -140,7 +181,8 @@ static uint32_t currentIntervalMs() {
   return state == NORMAL ? NORMAL_INTERVAL_MS : EVENT_INTERVAL_MS;  // adaptive
 }
 
-static String buildPacket(float adcMv, float index, float tempC, bool stormBtn) {
+static String buildPacket(float adcMv, float index, float tempC, bool stormBtn,
+                          const char *condition) {
   JsonDocument doc;
   char rid[48]; snprintf(rid, sizeof(rid), "%s-%08lx-%lu", DEVICE_ID,
                           (unsigned long)bootId, (unsigned long)++readingSeq);
@@ -148,7 +190,8 @@ static String buildPacket(float adcMv, float index, float tempC, bool stormBtn) 
   doc["device_id"] = DEVICE_ID;
   doc["observed_at"] = nullptr;         // no synced RTC: backend stamps receive time honestly
   doc["source"] = "HARDWARE";
-  doc["turbidity_raw_mv"] = adcMv;
+  // backend schema is ge=0, so an unmeasured sample must be null -- never -1
+  if (adcMv >= 0) doc["turbidity_raw_mv"] = adcMv; else doc["turbidity_raw_mv"] = nullptr;
   if (index >= 0) doc["turbidity_index"] = index; else doc["turbidity_index"] = nullptr;
   if (!isnan(tempC)) doc["temperature_c"] = tempC; else doc["temperature_c"] = nullptr;
   doc["conductivity_us_cm"] = nullptr;  // not fitted by default
@@ -156,7 +199,10 @@ static String buildPacket(float adcMv, float index, float tempC, bool stormBtn) 
   doc["storm_active"] = stormBtn;
   doc["sample_interval_seconds"] = currentIntervalMs() / 1000.0;
   JsonArray flags = doc["quality_flags"].to<JsonArray>();
-  if (index < 0) flags.add("SENSOR_FAULT");
+  // NO_FLOW carries a null index by design; only a real read failure is a fault.
+  bool idle = condition && strcmp(condition, "NO_FLOW") == 0;
+  if (index < 0 && !idle) flags.add("SENSOR_FAULT");
+  if (condition) flags.add(condition);
   String out; serializeJson(doc, out); return out;
 }
 
@@ -198,6 +244,12 @@ void setup() {
 #endif
   analogReadResolution(12);
   analogSetPinAttenuation(TURBIDITY_ADC_PIN, ADC_11db);  // widen ADC range; VERIFY for your board
+#if SENSOR_LED_PIN >= 0
+  pinMode(SENSOR_LED_PIN, OUTPUT); digitalWrite(SENSOR_LED_PIN, LOW);  // off until a measurement
+#endif
+#if FLOW_ADC_PIN >= 0
+  analogSetPinAttenuation(FLOW_ADC_PIN, ADC_11db);
+#endif
   ds18b20.begin();
   ds18b20Present = ds18b20.getDeviceCount() > 0;
 
@@ -224,8 +276,23 @@ void loop() {
   lastSampleMs = now;
   sampleCount++;
 
-  float adcMv = readTurbidityMv();
-  float index = toIndex(adcMv);
+  // --- flow gate: power the optical subsystem only when the turbine reports water ---
+  float flowMv = -1;
+  bool flowing = true;                     // gate disabled (FLOW_ADC_PIN < 0) => always measure
+#if FLOW_ADC_PIN >= 0
+  flowMv = readFlowMv();
+  flowing = flowMv >= FLOW_TRIGGER_MV;
+#endif
+
+  float adcMv = -1, index = -1;            // -1 => "not measured", serialised as null
+  const char *condition = "NO_FLOW";
+  if (flowing) {
+    if (state == IDLE) state = NORMAL;     // resume monitoring where we left off
+    adcMv = measureOptical();
+    index = toIndex(adcMv);
+    condition = classifyWater(adcMv, index);
+  }
+
   float tempC = NAN;  // NAN -> sent as null, never a bogus value
   if (ds18b20Present) {
     ds18b20.requestTemperatures();
@@ -240,18 +307,34 @@ void loop() {
   bool stormBtn = false;
 #endif
 
-  bool changed = updateState(index, now);
+  bool changed;
+  if (flowing) {
+    changed = updateState(index, now);
+  } else {
+    // Idle is a resting state, not a fault. Hold the state machine and clear the
+    // persistence timers so a dry gap can never accumulate toward an escalation.
+    changed = (state != IDLE);
+    state = IDLE;
+    aboveSince = belowSince = 0;
+  }
   setIndicators(state);  // LOCAL alarm fires regardless of connectivity
 
-  // event-aware transmission: always send on state change/fault, else heartbeat
+  // event-aware transmission: always send on state change/fault, else heartbeat.
+  // With the flow gate ON, every completed measurement is reported (that is the point of
+  // the subsystem) and silence between events is the saving; with it off, the original
+  // adaptive heartbeat applies.
   samplesSinceTx++;
   bool urgent = changed || state == ALERT || state == SENSOR_FAULT;
+#if FLOW_ADC_PIN >= 0
+  urgent = urgent || flowing;
+#endif
   if (urgent || samplesSinceTx >= HEARTBEAT_EVERY) {
     samplesSinceTx = 0;
-    String body = buildPacket(adcMv, index, tempC, stormBtn);
+    String body = buildPacket(adcMv, index, tempC, stormBtn, condition);
     if (!postJson(body)) enqueueOffline(body);  // bounded retry queue
   }
 
-  Serial.printf("idx=%.1f base=%.1f state=%d msgs=%lu buf=%d\n",
-                index, baselineValue, state, (unsigned long)msgCount, obCount);
+  Serial.printf("idx=%.1f base=%.1f state=%d cond=%s flow=%.0f msgs=%lu buf=%d\n",
+                index, baselineValue, state, condition, flowMv,
+                (unsigned long)msgCount, obCount);
 }

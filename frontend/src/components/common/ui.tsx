@@ -24,6 +24,11 @@ const STATE_STYLE: Record<string, string> = {
   ALERT: "bg-coral/20 text-coral ring-1 ring-coral/40 animate-pulseRing",
   RECOVERING: "bg-cyan/15 text-cyan ring-1 ring-cyan/30",
   SENSOR_FAULT: "bg-fuchsia-400/15 text-fuchsia-300 ring-1 ring-fuchsia-400/30",
+  IDLE: "bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/20",
+  CLEAN: "bg-teal/15 text-teal ring-1 ring-teal/30",
+  MURKY: "bg-amber/15 text-amber ring-1 ring-amber/30",
+  AIR_GAP: "bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/20",
+  NO_FLOW: "bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/20",
   STALE: "bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/20",
   OFFLINE: "bg-slate-400/15 text-slate-300",
 };

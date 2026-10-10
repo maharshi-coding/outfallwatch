@@ -4,7 +4,10 @@ and tells the caller when to open / escalate / resolve an event. No DB, no clock
 its own — timestamps come from the reading, so a seeded replay is fully deterministic.
 
 States:  NORMAL -> ELEVATED -> ALERT -> RECOVERING -> NORMAL
-Health:  OK | SENSOR_FAULT   (sensor health is tracked separately from monitoring state)
+Health:  OK | IDLE | SENSOR_FAULT   (health is tracked separately from monitoring state)
+         IDLE = the flow gate reports no water to measure, so the optical subsystem did
+         not run. That is a healthy resting state, NOT a sensor fault and NOT a clean
+         reading — no value is invented for it.
 """
 from __future__ import annotations
 
@@ -78,8 +81,22 @@ class DetectionEngine:
         return self._baseline_value
 
     def process(self, *, observed_at: datetime, turbidity_index: float | None,
-                storm_active: bool = False) -> DetectionResult:
+                storm_active: bool = False, idle: bool = False) -> DetectionResult:
         cfg = self.cfg
+
+        # --- idle: the flow gate found no moving water, so no measurement was taken. This
+        # is deliberately checked BEFORE the fault branch: an idle heartbeat carries a null
+        # index by design and must not be reported as a broken sensor. The persistence
+        # timers are cleared so a dry gap cannot accumulate toward an escalation. ---
+        if idle:
+            self.health = "IDLE"
+            self._above_since = self._below_since = None
+            return DetectionResult(
+                observed_at, self.state, self.health, None, self.baseline, None,
+                None, None,
+                "No flow detected — optical subsystem idle, no measurement taken.",
+                "None. The sensor powers up when the turbine reports water movement.",
+                storm_active)
 
         # --- sensor health: a missing/invalid turbidity index is a fault, not a zero ---
         if turbidity_index is None or not (0.0 <= turbidity_index <= 100.0):

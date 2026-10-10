@@ -96,8 +96,11 @@ def ingest_reading(db: Session, t: TelemetryIn) -> tuple[models.SensorReading, m
         db.add(reading)
 
     engine = get_engine(db, t.device_id)
+    # NO_FLOW is the firmware's flow gate saying there was no water to measure, so the
+    # null index is expected rather than a sensor failure.
     result = engine.process(observed_at=observed, turbidity_index=index,
-                            storm_active=t.storm_active)
+                            storm_active=t.storm_active,
+                            idle="NO_FLOW" in (t.quality_flags or []))
     reading.mode = result.state
 
     device.source = t.source

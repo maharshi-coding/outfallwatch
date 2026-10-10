@@ -28,6 +28,20 @@ spacing must be mechanically fixed and the path light-tight, and the rig must be
 final *before* you calibrate. Moving the LED, changing the container, or letting room light in
 invalidates the references.
 
+## Two things that will invalidate your calibration
+
+**1. Dark correction.** With `SENSOR_LED_PIN` wired, the firmware reports `lit - dark`, not the
+raw pin voltage. Calibrate against **that** number — use the dashboard wizard, which stores
+exactly what the firmware sends. A multimeter reading of the pin will not match it.
+
+**2. Air is not clean water.** An empty gap passes *more* light than clean water, so a dry rig
+produces the highest voltage of all and would otherwise be scored as the cleanest possible
+sample. `V_AIR_MIN_MV` is the cut-off above which the firmware reports `AIR_GAP` instead of a
+water reading. Measure it with the gap empty and set it just below that value.
+
+The resulting bands, highest voltage first: **AIR_GAP** → **CLEAN** → **MURKY**
+(`MURKY_INDEX_MIN` splits the last two).
+
 ## Formula
 
 ```

@@ -5,6 +5,15 @@ import { DeviceSelector, useSelectedDevice } from "@/components/common/DeviceSel
 import { TelemetryChart } from "@/components/charts/TelemetryChart";
 import { Gauge } from "@/components/charts/Gauge";
 
+// Plain-language labels for the flow-gated optical subsystem's verdict. "Clear" is
+// deliberately not claimed for an empty gap or a dry sensor.
+const WATER_LABEL: Record<string, string> = {
+  CLEAN: "Clear \u2014 low light attenuation",
+  MURKY: "Murky \u2014 high light attenuation",
+  AIR_GAP: "No water in gap (air) \u2014 not a water reading",
+  NO_FLOW: "No flow \u2014 subsystem idle, nothing measured",
+};
+
 export function LiveMonitoring() {
   const { effectiveId, device, lastReading: last } = useSelectedDevice();
   const series = useAsync(() => api.timeseries(effectiveId, 180), { pollMs: 2500, deps: [effectiveId] });
@@ -18,6 +27,9 @@ export function LiveMonitoring() {
   const mode = last?.mode ?? latest?.mode ?? "NORMAL";
   const health = last?.health ?? "OK";
   const flags = latest?.quality_flags ?? [];
+  // Water condition reported by the flow-gated optical subsystem. AIR_GAP and NO_FLOW
+  // are deliberately NOT "clean" — an empty gap passes more light than clean water.
+  const water = flags.find((f) => ["CLEAN", "MURKY", "AIR_GAP", "NO_FLOW"].includes(f)) ?? null;
 
   return (
     <div className="space-y-5">
@@ -32,6 +44,8 @@ export function LiveMonitoring() {
           <DeviceSelector />
           <StateBadge state={mode} />
           {health === "SENSOR_FAULT" && <StateBadge state="SENSOR_FAULT" />}
+          {health === "IDLE" && <StateBadge state="IDLE" />}
+          {water && <StateBadge state={water} />}
         </div>
       </div>
 
@@ -61,6 +75,8 @@ export function LiveMonitoring() {
             <Row k="Last observation" v={latest ? new Date(latest.observed_at).toLocaleString() : "—"} />
             <Row k="Sampling" v="adaptive (10 s normal / 2 s event)" />
             <Row k="Sensor health" v={health} />
+            <Row k="Water condition" v={water ? WATER_LABEL[water] : "\u2014"} />
+            <Row k="Captured at" v={latest ? new Date(latest.observed_at).toLocaleTimeString() : "\u2014"} />
             <Row k="Quality flags" v={flags.length ? flags.join(", ") : "none"} />
           </dl>
         </Panel>

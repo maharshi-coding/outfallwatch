@@ -37,12 +37,24 @@ a sane starting point for a GL5528. There is **no 5 V anywhere in this path**, s
 10 kΩ/15 kΩ step-down divider is gone and `DIVIDER_R_TOP`/`DIVIDER_R_BOTTOM` in `config.h` are
 unused by the code.
 
-### Optional: drive the LED from a GPIO instead of 3V3
+### Drive the LED from GPIO38 (implemented)
 
-Powering the LED from a spare GPIO lets the firmware light it **only during a sample**, which
-cuts the sensor's standing current (a genuine Green AI win, since the LED is the largest
-continuous draw here) and allows ambient-light subtraction — read dark, read lit, use the
-difference. This needs a small firmware change and is **not implemented yet**.
+`SENSOR_LED_PIN` lights the LED **only while a measurement is taken**, then switches it off.
+That removes the largest standing current in the sensor (a real Green AI win) and enables
+**ambient-light subtraction**: the firmware reads the LDR dark, switches the LED on, reads it
+lit, and uses `lit - dark`. Stray room light cancels out, which is the dominant error source
+for an open optical path.
+
+```
+GPIO38 ──[150–220Ω]──▶|LED  ── ( water gap ) ──  LDR ──► divider ──► GPIO1
+```
+
+> **This changes what you calibrate against.** `V_CLEAR_MV`/`V_CLOUDY_MV` must be the
+> **dark-corrected** value the firmware reports, not a raw multimeter reading. Use the
+> dashboard calibration wizard, which captures exactly what the firmware sends. See
+> CALIBRATION.md.
+
+Set `SENSOR_LED_PIN -1` to keep the LED permanently wired on and skip the subtraction.
 
 ## Flow sensor (turbine / DC motor) → GPIO2
 
@@ -65,9 +77,22 @@ motor − ──────────┴──────► ESP32-S3 GND
 For a 5 V hall-effect flow sensor (e.g. YF-S201) the open-collector pulse output instead needs
 a plain divider to 3.3 V, or a pull-up to 3V3 if you run the sensor's output open-drain.
 
-> **Not implemented in firmware yet.** No flow pin is read, and the telemetry packet has no
-> flow field — adding one means touching `main.cpp`, `TelemetryIn`, the `SensorReading` model,
-> and the UI. Tracked in IMPLEMENTATION_STATUS.md.
+### The flow gate (implemented)
+
+With `FLOW_ADC_PIN` set, the turbine reading gates the whole optical subsystem:
+
+| Turbine reading | Behaviour |
+| --- | --- |
+| `>= FLOW_TRIGGER_MV` | water is moving → pulse the LED, measure, classify, report |
+| `< FLOW_TRIGGER_MV` | idle → LED off, indicators off, null index, `NO_FLOW` heartbeat |
+
+The backend reads `NO_FLOW` as health **IDLE**, which is explicitly *not* a sensor fault and
+*not* a clean reading. Both pins default to `-1` (**disabled**), which keeps the original
+always-on continuous sampling, so an unwired board still works — set them when the hardware
+is physically present.
+
+`FLOW_TRIGGER_MV` must be measured on your own rig: spin the turbine by hand at the slowest
+flow you care about and read the serial `flow=` value.
 
 ## DS18B20 temperature (optional)
 
@@ -101,7 +126,8 @@ indicators are driven by the **local** state machine, so they work even with Wi-
 | GPIO | Use | Status |
 | --- | --- | --- |
 | 1 | turbidity substitute (LDR divider), ADC1_CH0 | in firmware |
-| 2 | flow sensor, ADC1_CH1 | **planned, not in firmware** |
+| 2 | flow sensor (turbine/motor), ADC1_CH1 | in firmware, `FLOW_ADC_PIN` (default -1 = off) |
+| 38 | measurement LED drive | in firmware, `SENSOR_LED_PIN` (default -1 = off) |
 | 21 | DS18B20 1-Wire | in firmware |
 | 40 / 41 / 42 | red / amber / green indicator LEDs | in firmware |
 | 47 | buzzer | in firmware |

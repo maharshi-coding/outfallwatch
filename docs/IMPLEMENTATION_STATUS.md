@@ -41,11 +41,25 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
   `V_CLEAR > V_CLOUDY` polarity, so **no firmware change was needed**. HARDWARE.md, WIRING.md,
   CALIBRATION.md and LIMITATIONS.md updated to match; the `DIVIDER_R_*` constants are now
   explicitly documented as unused. Power is a USB power bank (untethered run verified).
-- **NOT IMPLEMENTED — turbine/flow sensor.** The final design feeds a turbine or DC-motor flow
-  signal into the ESP32 (planned GPIO2, ADC1_CH1). No pin is read, `TelemetryIn` has no flow
-  field, the `SensorReading` model has no column, and nothing is shown in the UI. Wiring and
-  the clamp/divider protection a motor-generator needs are documented in WIRING.md, but this
-  is design-only. Do not present it as working.
+- **IMPLEMENTED (code-complete, hardware-unverified) — flow-gated optical subsystem.** The
+  turbine reading on `FLOW_ADC_PIN` gates the LED + photoresistor measurement: above
+  `FLOW_TRIGGER_MV` the firmware pulses the LED, takes a dark reference, reads lit, uses
+  `lit - dark` to cancel ambient light, classifies the water, and reports. Below it the LED
+  and indicators go off and a `NO_FLOW` heartbeat is sent with a **null** index.
+  - Water condition rides in the existing `quality_flags` list (`CLEAN` / `MURKY` / `AIR_GAP`
+    / `NO_FLOW`), so **no schema, model, or DB migration was needed**.
+  - `AIR_GAP` is a distinct band because an empty gap passes *more* light than clean water and
+    would otherwise score as the cleanest possible sample.
+  - Backend: `DetectionEngine.process(idle=...)` adds health **IDLE**, checked before the
+    fault branch so an expected null is never reported as a broken sensor, and clearing the
+    persistence timers so a dry gap cannot accumulate toward an escalation. 2 tests added
+    (21 passing).
+  - UI: condition badge, plain-language condition row, and capture time in Live Monitoring.
+  - **Both pins default to `-1` (disabled)**, preserving the verified always-on behaviour, so
+    the currently-running board is unaffected until the motor and LED are wired.
+  - **Unverified on hardware**: no turbine, LED, or LDR is connected yet, so
+    `FLOW_TRIGGER_MV`, `V_AIR_MIN_MV`, `MURKY_INDEX_MIN` and the calibration references are
+    all untuned placeholders. Compiles clean with the gate both enabled and disabled.
 - Hardware alert path caveat: with GPIO1 unwired the index clamps to 100, so the baseline settles at
   the ceiling and escalation (+30) is unreachable — the board **cannot** alert until a sensor or a
   pot/jumper on GPIO1 lets the baseline establish low and then rise.
