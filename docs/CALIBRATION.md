@@ -31,8 +31,8 @@ invalidates the references.
 ## Two things that will invalidate your calibration
 
 **1. Dark correction.** With `SENSOR_LED_PIN` wired, the firmware reports `lit - dark`, not the
-raw pin voltage. Calibrate against **that** number — use the dashboard wizard, which stores
-exactly what the firmware sends. A multimeter reading of the pin will not match it.
+raw pin voltage. Calibrate against **that** number — the serial `raw=` field. A multimeter
+reading of the pin will not match it.
 
 **2. Air is not clean water.** An empty gap passes *more* light than clean water, so a dry rig
 produces the highest voltage of all and would otherwise be scored as the cleanest possible
@@ -58,8 +58,13 @@ relative_turbidity_index = clamp( 100 × (V_clear − V_current) / (V_clear − 
 1. Fill the test container with **clear** water; let the reading settle; record `V_clear`.
 2. Stir in a small, safe amount of clay/soil to a repeatable "cloudy" reference; record
    `V_cloudy`.
-3. Enter both in the dashboard **Data & Settings → Turbidity calibration**, or POST to
-   `/api/calibrations`, or set `V_CLEAR_MV`/`V_CLOUDY_MV` in firmware `config.h`.
+3. Set `V_CLEAR_MV`/`V_CLOUDY_MV` in firmware `config.h` and **reflash**.
+
+> **Which calibration actually applies?** The firmware computes the index onboard and sends
+> it, and `_resolve_index` returns the device's own value whenever one is present. The
+> dashboard's **Data & Settings → Turbidity calibration** (and `POST /api/calibrations`) is a
+> **fallback**, used only for a device that sends `turbidity_raw_mv` with no index. For this
+> hardware, `config.h` is authoritative — editing the dashboard values changes nothing.
 
 ## Validation (enforced)
 

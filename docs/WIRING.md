@@ -50,9 +50,14 @@ GPIO38 ──[150–220Ω]──▶|LED  ── ( water gap ) ──  LDR ──
 ```
 
 > **This changes what you calibrate against.** `V_CLEAR_MV`/`V_CLOUDY_MV` must be the
-> **dark-corrected** value the firmware reports, not a raw multimeter reading. Use the
-> dashboard calibration wizard, which captures exactly what the firmware sends. See
-> CALIBRATION.md.
+> **dark-corrected** value the firmware reports (the serial `raw=` field), not a raw
+> multimeter reading of the pin. See CALIBRATION.md.
+
+> **Calibrate in `config.h`, not on the dashboard.** The firmware computes the index
+> onboard and sends it, and `_resolve_index` uses the device's own value whenever one is
+> present — the dashboard's V_clear/V_cloudy are only a **fallback** for devices that send
+> raw mV without an index. Editing them on the Data & Settings page will not change your
+> board's readings. Set them in `config.h` and reflash.
 
 Set `SENSOR_LED_PIN -1` to keep the LED permanently wired on and skip the subtraction.
 
