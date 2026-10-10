@@ -102,4 +102,17 @@ What OutfallWatch deliberately does **not** claim: [`docs/LIMITATIONS.md`](docs/
 
 ---
 
+## Team Skilos
+
+Built together at IslanderHack 2026.
+
+| Member | Role |
+| --- | --- |
+| **Maharshi Kamleshkumar Barot** ([@maharshi-coding](https://github.com/maharshi-coding)) | Software — full stack: FastAPI backend, detection engine, React dashboard, firmware integration, deploy |
+| **Ratli2099** ([@Ratli2099](https://github.com/Ratli2099)) | Research & hardware |
+| **David I** ([@David-Iglesias2022](https://github.com/David-Iglesias2022)) | Research & hardware |
+| _4th member — to be added_ | _TBD_ |
+
+---
+
 Monorepo layout: `backend/`, `frontend/`, `firmware/`, `datasets/`, `docs/`, `scripts/`.
