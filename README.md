@@ -66,7 +66,8 @@ cd frontend && npm run build                          # type-check + production 
 | NOAA Tides & Currents (water levels) | **WORKING** | live real-time + historical; station 8775296 (Corpus Christi Bay); fixture fallback offline |
 | GCOOS (oceanographic + water quality) | **WORKING** | live ERDDAP CBI_042 (temp, salinity, …); fixture fallback offline |
 | ESP32-S3 firmware | **PARTIAL** | full source + wiring; **compiles clean** (PlatformIO); not flash-verified (no board) |
-| CodeCarbon / TFLM / ESP-NN (Green AI) | **NOT IMPLEMENTED** | honest status; see docs/GREEN_AI.md |
+| CodeCarbon (Green AI) | **WORKING** | real host benchmark (≈49.5 mWh / 23.6 mg CO₂, M2); shown in Green AI Lab |
+| TFLM / ESP-NN (on-device NN) | **DESIGN DECISION** | deterministic edge engine by choice; see docs/GREEN_AI.md |
 
 > External coastal data is scoped to **NOAA + GCOOS** by request; other resource adapters
 > (TCEQ, Open-Meteo, GBIF, iNaturalist, NASA, OpenWeatherMap) were removed.

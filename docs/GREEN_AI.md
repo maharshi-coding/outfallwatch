@@ -45,11 +45,16 @@ E_idle   = 0.0002 mWh/s (light-sleep idle)
 - No deep-sleep between samples is modelled beyond light-sleep idle.
 - No real-world battery-life projection is claimed. A measured number needs a power meter.
 
-## CodeCarbon
+## CodeCarbon — RUN
 
-`scripts/benchmark_codecarbon.py` runs the replay many times under CodeCarbon to estimate
-the **host computer's** footprint. It was **not executed** in the build environment (status
-NOT_IMPLEMENTED/runnable). CodeCarbon measures the host, **never** the microcontroller.
+`scripts/benchmark_codecarbon.py` runs the Green-AI replay 50,000× under CodeCarbon and writes
+the result to `backend/app/integrations/fixtures/codecarbon_result.json`, served at
+`GET /api/energy/codecarbon` and shown on the Green AI Lab page.
+
+Measured (Apple M2, 14.57 s workload): **≈49.5 mWh host energy / ≈23.6 mg CO₂eq**. Labelled
+**ESTIMATED** because Apple Silicon uses CodeCarbon's CPU-power model, not RAPL. This is the
+**host computer's** footprint of the analysis — **never** the ESP32's current draw (that needs a
+hardware power meter). Re-run anytime with the script to refresh the committed result.
 
 ## TFLM / ESP-NN
 

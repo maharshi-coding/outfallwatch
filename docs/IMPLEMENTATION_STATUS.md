@@ -36,7 +36,7 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
 | GCOOS oceanographic/WQ | **WORKING** | live ERDDAP CBI_042 verified (temp 29.4 °C, salinity 27.9 PSU); fixture fallback offline. |
 | _(removed by request)_ | — | TCEQ, Open-Meteo, GBIF, iNaturalist, NASA Earthdata, OpenWeatherMap deleted. |
 | ESP32-S3 firmware | **PARTIAL** | full source + wiring; **compiles clean** (PlatformIO); not flash-verified (no board). |
-| CodeCarbon | **NOT_IMPLEMENTED** (runnable) | `scripts/benchmark_codecarbon.py` present, not run. |
+| CodeCarbon | **WORKING** | ran 50k-replay host benchmark; measured ≈49.5 mWh / 23.6 mg CO₂ (M2, ESTIMATED); served at `/api/energy/codecarbon`, shown in Green AI Lab. |
 | TFLM / ESP-NN | **NOT_IMPLEMENTED** | no NN deployed; honest. |
 
 ## Known gaps / blockers
@@ -46,12 +46,12 @@ Last updated: 2026-10-09. Truth over optimism — code, runtime, and tests are t
 - **TCEQ → WORKING** needs a real SWQM export dropped into the fixtures path.
 - **NOAA** shows live data only with internet.
 - **GCOOS/Weather** need a verified dataset URL / API key respectively.
-- **CodeCarbon** benchmark needs `pip install codecarbon` and a run.
+- **CodeCarbon** benchmark run; re-run `scripts/benchmark_codecarbon.py` to refresh the committed result.
 
 ## Remaining next steps (priority order)
 
 1. Flash firmware on the actual board; reconcile pins; record verified vs assumed.
 2. Replace the TCEQ fixture with an authentic export; flip status to WORKING.
-3. Run CodeCarbon host benchmark; paste measured host kWh/CO₂ into GREEN_AI.md.
+3. (done) CodeCarbon host benchmark run; measured figures in GREEN_AI.md + Green AI Lab.
 4. Wire a verified GCOOS ERDDAP series.
 5. (Stretch) train/quantize/deploy a small TinyML model and benchmark vs the rule engine.
