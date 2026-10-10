@@ -4,11 +4,11 @@
 IslanderHack · Corpus Christi, TX · *Green AI & Resource Efficiency* track · Topic: Coastal Conservation.
 
 ### 🔗 Live demo
-**https://stretch-offices-likely-spray.trycloudflare.com** — open it and click **Launch Storm Demo**.
+**https://outfallwatch.onrender.com** — open it and click **Launch Storm Demo**.
 
-> ⚠️ That URL is a **temporary tunnel** to the dev machine and is only live while the demo is running.
-> It changes each time the tunnel restarts. To run your own, or deploy a permanent link, see
-> [docs/DEPLOY.md](docs/DEPLOY.md).
+> Hosted on Render's free tier: the first visit after it's been idle may take ~50 s to wake up — give it a moment.
+> For the in-person demo with real ESP32 hardware on the same Wi-Fi, run a local tunnel instead (see
+> [docs/DEPLOY.md](docs/DEPLOY.md)).
 
 OutfallWatch watches stormwater outfalls for **sustained change** in water conditions
 (turbidity, temperature, optional conductivity) using a cheap ESP32-S3 sensor node that
